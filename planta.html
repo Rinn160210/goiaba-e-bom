@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BioMapping - Ifes Cachoeiro</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), 
+                        url('https://images.unsplash.com/photo-1441333391268-402129821af1?auto=format&fit=crop&q=80&w=2000');
+            background-size: cover;
+            background-attachment: fixed;
+            background-position: center;
+            color: #fff;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #95d5b2, #ffffff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            font-size: 0.9rem;
+            color: #d8f3dc;
+            opacity: 0.8;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 24px;
+            padding: 40px;
+            margin-bottom: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .secao-titulo {
+            color: #b7e4c7;
+            font-size: 1.5rem;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .secao-titulo::before {
+            content: '';
+            width: 50px;
+            height: 2px;
+            background: #40916c;
+            display: block;
+        }
+
+        /* Estilo do Mapa */
+        #map {
+            height: 400px;
+            width: 100%;
+            border-radius: 20px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            z-index: 1;
+        }
+
+        .relato-texto p {
+            margin-bottom: 20px;
+            line-height: 1.8;
+            font-weight: 300;
+            font-size: 1.1rem;
+            color: #f0f0f0;
+        }
+
+        .footer-alunos {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .chip-aluno {
+            background: rgba(45, 106, 79, 0.4);
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            border: 1px solid rgba(149, 213, 178, 0.3);
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            margin-bottom: 50px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 10px;
+        }
+
+        th {
+            text-align: left;
+            padding: 15px 20px;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            color: #95d5b2;
+        }
+
+        tr.data-row {
+            background: rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        tr.data-row:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.01);
+        }
+
+        td {
+            padding: 20px;
+        }
+
+        td:first-child { border-radius: 12px 0 0 12px; }
+        td:last-child { border-radius: 0 12px 12px 0; }
+
+        .tree-name { font-weight: 700; color: #fff; }
+        .coord-box {
+            background: #1b4332;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            color: #95d5b2;
+            border: 1px solid #2d6a4f;
+        }
+
+        .doc-item {
+            margin-bottom: 25px;
+        }
+        .doc-label {
+            display: block;
+            color: #95d5b2;
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+        .doc-content {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            border-left: 3px solid #40916c;
+            color: #e0e0e0;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2.2rem; }
+            .glass-card { padding: 20px; }
+            #map { height: 300px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <div class="subtitle">Relatório Técnico</div>
+            <h1>BIO MAPPING</h1>
+        </header>
+
+        <section class="glass-card">
+            <h2 class="secao-titulo">DESCOBRINDO ALGO QUE ERA DESCOBERTO</h2>
+            <div class="relato-texto">
+                <p>Ao recebemos a informação do que iríamos executar eu (Adrielle) já tinha em mente aonde iríamos primeiro. A princípio fomos diretamente para uma espécie de hortinha que fica localizada do lado esquerdo, oposto a biblioteca.</p>
+                <p>De cara encontramos uma vasta variedade de arvores frutíferas, nesta parte tem goiabeira, limoeiro, aceroleiro, amoreira, mamoeiro, coqueiro, bananeiro, videira, maracujazeiro e observamos um pé de pitaya que estava na sua fase vegetativa.</p>
+                <p>Aos andarmos um pouco para o lado da pista, atrás dos blocos ímpares no lado direito achamos uma goiabeira, aceroleiro, mangueira, limoeiro, bananeiro, cajueiro e pé de jambo (jambeiro). Andamos até a entrada localizamos pé de manga, pé de coco, uva e um pé de pitomba.</p>
+                <p>Foi uma boa experiência boa, legal e informacional.</p>
+            </div>
+            <div class="footer-alunos">
+                <span>Equipe de Pesquisa:</span>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <span class="chip-aluno">Adrielle</span>
+                    <span class="chip-aluno">Daniel Pereira</span>
+                    <span class="chip-aluno">Kainã Nunes</span>
+                </div>
+            </div>
+        </section>
+
+        <div id="map"></div>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Espécie</th>
+                        <th>Ponto de Referência</th>
+                        <th>Latitude</th>
+                        <th>Longitude</th>
+                    </tr>
+                </thead>
+                <tbody id="corpo-tabela"></tbody>
+            </table>
+        </div>
+
+        <section class="glass-card">
+            <h2 class="secao-titulo">Documentação de Desenvolvimento</h2>
+            <div class="doc-item">
+                <span class="doc-label">Página Gerada</span>
+                <div class="doc-content">Representação das árvores frutíferas do Ifes Cachoeiro.</div>
+            </div>
+            <div class="doc-item">
+                <span class="doc-label">LLM Utilizado</span>
+                <div class="doc-content">Gemini 1.5 Flash (Google AI)</div>
+            </div>
+            <div class="doc-item">
+                <span class="doc-label">Prompts Principais</span>
+                <div class="doc-content">
+                    <ul>
+                        <li><em>"me faça um script de nome planta.html, no qual exiba nome, ponto de referencia e cordenadas (latitudes e longitudes) de arvores frutiferas ficticias, que eu futuramente irei trocar o nome"</em></li>
+                        <br>
+                        <li><em>"adicione antes da tabela o seguinte texto DESCOBRINDO ALGO QUE ERA DESCOBERTO Ao recebemos a informação do que iríamos executar eu (Adrielle) já tinha em mente aonde iríamos primeiro . A princípio fomos diretamente para uma espécie de hortinha que fica localizada do lado esquerdo , oposto a biblioteca. De cara encontramos uma vasta variedade de arvores frutíferas , nesta parte tem goiabeira, limoeiro, aceroleiro, amoreira, mamoeiro, coqueiro , bananeiro, videira, maracujazeiro e observamos um pé de pitaya que estava na sua fase vegetativa. Aos andarmos um pouco para o lado da pista, atrás dos blocos ímpares no lado direito"</em></li>
+                        <br>
+                        <li><em>"faça denovo e mais bonito"</em></li>
+                        <br>
+                        <li><em>"Arvores: Goiabeira, Amoreira, Videira(uva), Limoeiro, Mangueira, Aceroleira, Coqueiro, Goiabeira, Limoeiro Goiabeira, Cajueiro, Jambeiro; Locais onde estão/ ponto de referencia: Atrás do estacionamento do bloco 0 e atrás da biblioteca, Ao lado do pé de uva em direção ao galpão, Ao lado da goiabeira atrás do bloco 0, Em frente a goiabeira atrás do bloco 0, Ao lado da rua lateral ao bloco 1, No outro lado da rua ao lado do bloco 5, Em direção ao galpão, No outro lado da rua à lateral da quadra, No outro lado da rua ao lado do bloco 7, No outro lado da rua à direção do bloco 7, No outro lado da rua na lateral à quadra, Entre o bloco 9 e o bloco 7; Coordenadas(latitude/longitude): (-20,8036000, -41,1545974),(-20,8036329, -41,1544003),(-20,8036172, -41,1545086),(-20,8036558, -41,1545525),(-20,8031825, -41,1543258),(-20,8028794, -41,1541290),(-20,8036457, -41,1544586),(-20,8025670, -41,1539728),(-20,8026773, -41,1540053),(-20,8026491, -41,1539761),(-20,8023535, -41,1538179),(-20,8025729, -41,1541465)"</em></li> <br> <li><em>agora por ultimo, ao final da pagina adicione isso: a página HTML gerada para representar as árvores frutíferas do Ifes Cachoeiro; o(s) nome(s) do(s) LLM(s) utilizados na geração da página HTML; o(s) prompt(s) criado(s) e submetido(s) ao(s) LLM(s) para a criação da página HTML.</em></li>
+                        <br>
+                        <li><em>"Agora adicione um mapa na pagina onde exiba as localizações"</em></li>
+                        <br>
+                        <li><em>"não era pra mudar nada, so adicione o mapa"</em></li> 
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const dados = [
+            { nome: "Goiabeira", ref: "Atrás do estacionamento do bloco 0 e atrás da biblioteca", lat: -20.8036000, lng: -41.1545974 },
+            { nome: "Amoreira", ref: "Ao lado do pé de uva em direção ao galpão", lat: -20.8036329, lng: -41.1544003 },
+            { nome: "Videira (uva)", ref: "Ao lado da goiabeira atrás do bloco 0", lat: -20.8036172, lng: -41.1545086 },
+            { nome: "Limoeiro", ref: "Em frente a goiabeira atrás do bloco 0", lat: -20.8036558, lng: -41.1545525 },
+            { nome: "Mangueira", ref: "Ao lado da rua lateral ao bloco 1", lat: -20.8031825, lng: -41.1543258 },
+            { nome: "Aceroleira", ref: "No outro lado da rua ao lado do bloco 5", lat: -20.8028794, lng: -41.1541290 },
+            { nome: "Coqueiro", ref: "Em direção ao galpão", lat: -20.8036457, lng: -41.1544586 },
+            { nome: "Goiabeira", ref: "No outro lado da rua à lateral da quadra", lat: -20.8025670, lng: -41.1539728 },
+            { nome: "Limoeiro", ref: "No outro lado da rua ao lado do bloco 7", lat: -20.8026773, lng: -41.1540053 },
+            { nome: "Goiabeira", ref: "No outro lado da rua à direção do bloco 7", lat: -20.8026491, lng: -41.1539761 },
+            { nome: "Cajueiro", ref: "No outro lado da rua na lateral à quadra", lat: -20.8023535, lng: -41.1538179 },
+            { nome: "Jambeiro", ref: "Entre o bloco 9 e o bloco 7", lat: -20.8025729, lng: -41.1541465 }
+        ];
+
+        // Inicializar o mapa
+        const map = L.map('map').setView([-20.8032, -41.1542], 17);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        const tbody = document.getElementById('corpo-tabela');
+        
+        dados.forEach(item => {
+            // Preencher tabela
+            tbody.innerHTML += `
+                <tr class="data-row">
+                    <td><span class="tree-name">${item.nome}</span></td>
+                    <td><span class="ref-text">${item.ref}</span></td>
+                    <td><span class="coord-box">${item.lat}</span></td>
+                    <td><span class="coord-box">${item.lng}</span></td>
+                </tr>
+            `;
+
+            // Adicionar marcador no mapa
+            L.marker([item.lat, item.lng])
+                .addTo(map)
+                .bindPopup(`<b>${item.nome}</b><br>${item.ref}`);
+        });
+    </script>
+</body>
+</html>
